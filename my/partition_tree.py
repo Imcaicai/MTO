@@ -102,7 +102,8 @@ class PartitionTree:
             case = 0    # 表示每个查询
             total_overlap_ids = {}
             case_cost = {}
-            
+            total_overlap_cost = 0
+
             for query in queries:
                 cost = 0
                 overlapped_leaf_ids = self.query_single(query, using_rtree_filter, False, redundant_partitions)
@@ -110,19 +111,21 @@ class PartitionTree:
                 for nid in overlapped_leaf_ids:
                     if nid >= 0:
                         cost += self.nid_node_dict[nid].node_size
+                        total_overlap_cost += 1
                     else:
                         cost += (-nid) # redundant partition cost?
                 total_cost += cost
                 case_cost[case] = cost
                 case += 1
             
-            if print_result:
-                print("Total logical IOs:", total_cost)
-                print("Average logical IOs:", total_cost // len(queries))   # 取整数
-                for case, ids in total_overlap_ids.items():
-                    print("query",case, ids, "cost:", case_cost[case])
-            
-            return total_cost // len(queries)
+            # if print_result:
+            #     with open(cost_path, 'w') as file:
+            #         file.write("Total logical IOs: {}\n".format(total_cost))
+            #         file.write("Average logical IOs: {}\n".format(total_cost // len(queries)))
+            #         for case, ids in total_overlap_ids.items():
+            #             file.write("query {}: {} cost: {}\n".format(case, ids, case_cost[case]))
+
+            return total_cost // len(queries), total_cost, total_overlap_cost // len(queries), total_overlap_cost
         
 
         def get_pid_for_data_point(self, point):

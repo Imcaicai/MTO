@@ -1,0 +1,5 @@
+Method build time: 5.073567628860474
+Average logical IOs: 389109
+Total logical IOs: 71596172
+Average blocks accessed: 1
+Total blocks accessed: 290

@@ -1,0 +1,124 @@
+Total logical IOs: 26328547
+Average logical IOs: 215807
+query 0: [11] cost: 16362
+query 1: [11] cost: 16362
+query 2: [11] cost: 16362
+query 3: [11] cost: 16362
+query 4: [11] cost: 16362
+query 5: [17] cost: 16556
+query 6: [17] cost: 16556
+query 7: [17] cost: 16556
+query 8: [17] cost: 16556
+query 9: [17] cost: 16556
+query 10: [40, 111, 137, 138] cost: 501354
+query 11: [40, 111, 137, 138] cost: 501354
+query 12: [40, 111, 137, 138] cost: 501354
+query 13: [40, 111, 137, 138] cost: 501354
+query 14: [119, 120, 85, 121, 122] cost: 169595
+query 15: [17] cost: 16556
+query 16: [17] cost: 16556
+query 17: [17] cost: 16556
+query 18: [17] cost: 16556
+query 19: [11] cost: 16362
+query 20: [11] cost: 16362
+query 21: [11] cost: 16362
+query 22: [11] cost: 16362
+query 23: [17] cost: 16556
+query 24: [17] cost: 16556
+query 25: [37, 67, 105, 106, 70] cost: 1150851
+query 26: [37, 67, 105, 106, 70] cost: 1150851
+query 27: [37, 67, 105, 106, 70] cost: 1150851
+query 28: [63, 75, 76, 79] cost: 416493
+query 29: [63, 75, 76, 79] cost: 416493
+query 30: [127, 128, 92] cost: 229179
+query 31: [127, 128, 92] cost: 229179
+query 32: [127, 128, 92] cost: 229179
+query 33: [127, 128, 92] cost: 229179
+query 34: [109, 111] cost: 76384
+query 35: [11] cost: 16362
+query 36: [43, 75, 45] cost: 382479
+query 37: [11] cost: 16362
+query 38: [11] cost: 16362
+query 39: [87, 141, 142, 124, 52] cost: 591648
+query 40: [87, 141, 142, 124, 52] cost: 591648
+query 41: [87, 141, 142, 124, 52] cost: 591648
+query 42: [87, 141, 142, 124, 52] cost: 591648
+query 43: [87, 141, 142, 124, 52] cost: 591648
+query 44: [11] cost: 16362
+query 45: [11] cost: 16362
+query 46: [11] cost: 16362
+query 47: [11] cost: 16362
+query 48: [11] cost: 16362
+query 49: [32, 17, 101, 102] cost: 435992
+query 50: [32, 17, 101, 102] cost: 435992
+query 51: [32, 17, 101, 102] cost: 435992
+query 52: [55, 131, 132, 94, 57] cost: 451389
+query 53: [55, 131, 132, 94, 57] cost: 451389
+query 54: [11] cost: 16362
+query 55: [11] cost: 16362
+query 56: [11] cost: 16362
+query 57: [11] cost: 16362
+query 58: [11] cost: 16362
+query 59: [11] cost: 16362
+query 60: [11] cost: 16362
+query 61: [11] cost: 16362
+query 62: [11] cost: 16362
+query 63: [102, 103, 135] cost: 91781
+query 64: [102, 103, 135] cost: 91781
+query 65: [17, 102, 103, 135] cost: 108337
+query 66: [17, 101, 102] cost: 90446
+query 67: [17, 102] cost: 73910
+query 68: [17, 102] cost: 73910
+query 69: [17, 101, 102] cost: 90446
+query 70: [11, 75] cost: 32932
+query 71: [17] cost: 16556
+query 72: [17] cost: 16556
+query 73: [17] cost: 16556
+query 74: [17] cost: 16556
+query 75: [109, 110, 111, 73] cost: 278485
+query 76: [109, 110, 111, 73] cost: 278485
+query 77: [109, 110, 73] cost: 222579
+query 78: [109, 110, 73] cost: 222579
+query 79: [109, 110, 111, 73] cost: 278485
+query 80: [11] cost: 16362
+query 81: [11] cost: 16362
+query 82: [79, 115, 116, 82] cost: 464665
+query 83: [11] cost: 16362
+query 84: [11] cost: 16362
+query 85: [57, 95, 96, 97, 99, 32] cost: 708587
+query 86: [57, 95, 96, 97, 99, 32] cost: 708587
+query 87: [57, 95, 96, 97, 99, 32] cost: 708587
+query 88: [57, 95, 96, 97, 99, 32] cost: 708587
+query 89: [57, 95, 96, 97, 99, 32] cost: 708587
+query 90: [11] cost: 16362
+query 91: [11] cost: 16362
+query 92: [11] cost: 16362
+query 93: [11] cost: 16362
+query 94: [65, 66] cost: 276541
+query 95: [134, 65, 66] cost: 311840
+query 96: [134, 65, 66] cost: 311840
+query 97: [52, 129, 130, 92] cost: 588653
+query 98: [52, 129, 130, 92] cost: 588653
+query 99: [52, 129, 130, 92] cost: 588653
+query 100: [117, 118] cost: 168594
+query 101: [117, 118] cost: 168594
+query 102: [117, 118] cost: 168594
+query 103: [117, 118] cost: 168594
+query 104: [117, 118] cost: 168594
+query 105: [17, 135, 136, 64] cost: 56224
+query 106: [11] cost: 16362
+query 107: [66, 11] cost: 48298
+query 108: [63, 64, 81, 82] cost: 501259
+query 109: [63, 64, 81, 82] cost: 501259
+query 110: [63, 64, 81, 82] cost: 501259
+query 111: [97, 98, 99, 133, 134] cost: 176649
+query 112: [97, 98, 99, 133, 134] cost: 176649
+query 113: [97, 98, 99, 133, 134] cost: 176649
+query 114: [97, 98, 99, 133, 134] cost: 176649
+query 115: [97, 98, 99, 133, 134] cost: 176649
+query 116: [11] cost: 16362
+query 117: [11] cost: 16362
+query 118: [11] cost: 16362
+query 119: [11] cost: 16362
+query 120: [11] cost: 16362
+query 121: [99, 133, 134, 32] cost: 478154

@@ -1,5 +1,6 @@
 
 
+from datetime import datetime
 import random
 import time
 
@@ -14,7 +15,7 @@ class DatasetAndQuerysetHelper:
     domain: [base_path]/dataset/lineitem_[scale_factor]_[prob_threshold]_domains.csv
     queryset: [base_path]/queryset/[prob]/[vary_item]/[vary_val]_[used_dimensions]_[distribution/random].csv
     '''    
-    def __init__(self, used_dimensions = None, scale_factor = 100, base_path = 'C:/Users/Cloud/iCloudDrive/NORA_experiments',
+    def __init__(self, used_dimensions = None, scale_factor = 100, base_path = './experiments',
                 prob_id = 1, vary_id = 0, vary_val = 0, train_percent = 0.5, random_percent = 0):
         
         self.used_dimensions = used_dimensions # i.e., [1,2,3,4]
@@ -26,8 +27,6 @@ class DatasetAndQuerysetHelper:
         self.block_size = 1000000 // self.scale_factor # in original file, 1M rows take approximately 128MB
         
         self.base_path = base_path
-        self.save_path_data = base_path + '/dataset/lineitem_' + str(scale_factor) + '_' + str(self.prob_threshold) + '.csv'
-        self.save_path_domain = base_path + '/dataset/lineitem_' + str(scale_factor) + '_' + str(self.prob_threshold) + '_domains.csv'
         
         self.vary_items = ['default', 'alpha', 'num_dims', 'prob_dims', 'num_X']
         self.vary_id = vary_id
@@ -53,35 +52,14 @@ class DatasetAndQuerysetHelper:
         
     
     # = = = = = public functions (API) = = = = =
-    
-    def set_config(self, scale_factor = 100, base_path = 'C:/Users/Cloud/iCloudDrive/NORA_experiments', 
-                   used_dimensions = None, prob_id = 1, vary_id = 0, vary_val = 0):
-        '''
-        As many attributes are related to each other, this is used to refresh the whole settings.
-        '''
-        self.used_dimensions = used_dimensions
-        self.scale_factor = scale_factor
-        self.prob_threshold = 1 / self.scale_factor
-        self.block_size = 1000000 // self.scale_factor # in original file, 1M rows take approximately 128MB
-        self.base_path = base_path
-        self.save_path_data = base_path + '/dataset/lineitem_' + str(scale_factor) + '_' + str(self.prob_threshold) + '.csv'
-        self.save_path_domain = base_path + '/dataset/lineitem_' + str(scale_factor) + '_' + str(self.prob_threshold) + '_domains.csv'
-        self.vary_id = vary_id
-        self.vary_val = vary_val
-        self.prob_id = prob_id
-        self.query_base_path = self.base_path + '/queryset/prob' + str(self.prob_id) + '/' + self.vary_items[vary_id] + '/'
-        self.query_file_name = str(vary_val) + '_' + str(self.used_dimensions)
-        self.query_distribution_path = self.query_base_path + self.query_file_name + '_distribution.csv'
-        self.query_random_path = self.query_base_path + self.query_file_name + '_random.csv'    
-    
-    def load_dataset(self, used_dimensions = []):
+    def load_dataset(self, used_dimensions = [], data_path = None, domain_path = None):
         '''
         the priority of the used_dimensions argument in the function is higher than the saved attribute version
         domains: [[L1, U1], [L2, U2],...]
         return the dataset projected on selected dimensions
         '''
-        dataset = np.genfromtxt(self.save_path_data, delimiter=',') # the sampled subset
-        domains = np.genfromtxt(self.save_path_domain, delimiter=',') # the domain of that scale
+        dataset = np.genfromtxt(data_path, delimiter=',') # the sampled subset
+        domains = np.genfromtxt(domain_path, delimiter=',') # the domain of that scale
         if used_dimensions != []:
             dataset = dataset[:,used_dimensions]
             domains = domains[used_dimensions]
@@ -114,7 +92,7 @@ class DatasetAndQuerysetHelper:
         else:
             return distribution_query, random_query
     
-    def generate_dataset_and_save(self, original_table_path, chunk_size = 100000):
+    def generate_dataset_and_save(self, table_path, data_path, domain_path, chunk_size = 100000):
         '''
         refer to TPCH tools to generate the original dataset (.tbl)
         this function is used to process the .tbl file with given sampling rate to generate a .csv file
@@ -129,7 +107,7 @@ class DatasetAndQuerysetHelper:
         start_time = time.time()
         
         batch_count = 0
-        for chunk in pd.read_table(original_table_path, delimiter='|', usecols=cols, names=col_names, chunksize=chunk_size):
+        for chunk in pd.read_table(table_path, delimiter='|', usecols=cols, names=col_names, chunksize=chunk_size):
             print('current chunk: ', batch_count)
             chunk.apply(lambda row: self.__process_chunk_sampling(row, domains, sampled_subset), axis=1)
             batch_count += 1
@@ -139,10 +117,50 @@ class DatasetAndQuerysetHelper:
         
         sampled_subset = np.array(sampled_subset)
         domains = np.array(domains)
-        np.savetxt(self.save_path_data, sampled_subset, delimiter=',')
-        np.savetxt(self.save_path_domain, domains, delimiter=',')
+        np.savetxt(data_path, sampled_subset, delimiter=',')
+        np.savetxt(domain_path, domains, delimiter=',')
+
+
+    def generate_dataset_and_save_q4(self, lineitem_path, orders_path, data_path, domain_path, chunk_size=100000):
+        '''
+        Generate and save the dataset by joining lineitem.tbl and order.tbl on i_orderkey = o_orderkey.
+        '''
+        sampled_subset = []
+        domains = [[float('inf'), float('-inf')] for _ in range(self.domain_dims)] # indicate min, max
+
+        # Define column names and indices
+        lineitem_cols = [i for i in range(self.total_dims)]
+        lineitem_col_names = ['_i'+str(i) for i in range(self.total_dims)]
+        orders_cols = [i for i in range(9)]
+        orders_col_names = ['_o'+str(i) for i in range(9)]
+
+        start_time = time.time()
+        
+        # Read lineitem.tbl and orders.tbl in chunks and process
+        batch_count = 0
+        for lineitem_chunk in pd.read_table(lineitem_path, delimiter='|', usecols=lineitem_cols, names=lineitem_col_names, chunksize=chunk_size):
+            print('current chunk: ', batch_count)
+            for orders_chunk in pd.read_table(orders_path, delimiter='|', usecols=orders_cols, names=orders_col_names, chunksize=chunk_size):
+                # Perform inner join on i_orderkey = o_orderkey
+                merged_chunk = pd.merge(lineitem_chunk, orders_chunk, left_on='_i0', right_on='_o0', how='inner')
+                # Process merged chunk and update domains
+                merged_chunk.apply(lambda row: self.__process_chunk_sampling_q4(row, domains, sampled_subset), axis=1)
+
+                batch_count += 1
+
+        end_time = time.time()
+        print('total processing time: ', end_time - start_time)
+
+        # Convert lists to numpy arrays
+        sampled_subset = np.array(sampled_subset)
+        domains = np.array(domains)
+
+        # Save sampled subset and domains to CSV files
+        np.savetxt(data_path, sampled_subset, delimiter=',')
+        np.savetxt(domain_path, domains, delimiter=',')
+
     
-    def generate_queryset_and_save(self, query_amount, queryset_type = 0, dim_prob = [], prob_id = 1, vary_id = 0, vary_val = 0, 
+    def generate_queryset_and_save(self, domain_path, query_amount, queryset_type = 0, dim_prob = [], prob_id = 1, vary_id = 0, vary_val = 0, 
                                    return_train_test = True):
         '''
         generate queryset for given dimensions.
@@ -161,7 +179,7 @@ class DatasetAndQuerysetHelper:
         the returned queries are not numpy object by default
         '''
         
-        domains = np.genfromtxt(self.save_path_domain, delimiter=',')[self.used_dimensions]
+        domains = np.genfromtxt(domain_path, delimiter=',')[self.used_dimensions]
         if dim_prob == []: # by default, use all the selected dimensions
             dim_prob = [1 for i in range(len(self.used_dimensions))]  
         maximum_range = [(domains[i,1] - domains[i,0]) * self.maximum_range_percent for i in range(len(domains))]
@@ -208,7 +226,6 @@ class DatasetAndQuerysetHelper:
             
         elif queryset_type == 2: # in this case, the total query amount are not fixed
             num_training_query = query_amount // 2
-            num_testing_query = num_training_query
             training_set = self.__generate_new_training_set(num_training_query, domains, maximum_range)
             testing_set = self.__generate_new_testing_set(training_set, domains, maximum_X = self.maximum_X)
             # TODO save it
@@ -242,99 +259,7 @@ class DatasetAndQuerysetHelper:
         else:
             print("No supported queryset type!")
             return None, None
-        
-    def extend_queryset(self, queries, QDistThreshold_percent = None, domains = None):
-        '''
-        extend the provided queryset with the previous provided query distance threshold
-        '''
-        extended_queries = []
-        
-        if QDistThreshold_percent is None:
-            QDistThreshold_percent = self.QDistThreshold_percent
-        
-        if domains is None:
-            domains = np.genfromtxt(self.save_path_domain, delimiter=',')[self.used_dimensions]
-            
-        num_dims = len(domains)
-            
-        extended_values = [(domain[1]-domain[0]) * QDistThreshold_percent for domain in domains]
-        EV = np.array(extended_values)
-        BL = [domain[0] for domain in domains]
-        BU = [domain[1] for domain in domains]
-         
-        for query in queries:
-            
-            QL = np.array(query[0:num_dims])
-            QU = np.array(query[num_dims:])
-            
-            QL -= EV # extended_values do not need to be converted to numpy
-            QL = np.amax(np.array([QL.tolist(), BL]),axis=0).tolist()# bound it by the domain
-            
-            QU += EV
-            QU = np.amin(np.array([QU.tolist(), BU]),axis=0).tolist() # bound it by the domain
-            
-            extended_query = QL + QU
-            extended_queries.append(extended_query)
-               
-        return extended_queries
-    
-    def visualize_queryset_and_dataset(self, dims, training_set = None, testing_set = None, dataset = None, path = None):
-        '''
-        the dims are not the original dims, it's with regarded to the training set's dims
-        the dimensions of training set, testing set and dataset should be corresponding to self.used_dimensions
-        2D only!
-        '''
-        fig, ax = plt.subplots(1)
-        
-        domains = np.genfromtxt(self.save_path_domain, delimiter=',')[self.used_dimensions]
-        num_dims = len(self.used_dimensions)
-        
-        plt.xlim(domains[dims[0]][0], domains[dims[0]][1])
-        plt.ylim(domains[dims[1]][0], domains[dims[1]][1])
-        
-        if training_set is not None:
-            case = 0
-            for query in training_set:
 
-                lower1 = query[dims[0]]
-                lower2 = query[dims[1]]  
-                upper1 = query[dims[0]+num_dims]
-                upper2 = query[dims[1]+num_dims]    
-
-                rect = Rectangle((lower1,lower2),upper1-lower1,upper2-lower2,fill=False,edgecolor='r',linewidth=1)
-                ax.text(upper1, upper2, case, color='b',fontsize=7)
-                case += 1
-                ax.add_patch(rect)
-        
-        if testing_set is not None:
-            case = 0
-            for query in testing_set:
-
-                lower1 = query[dims[0]]
-                lower2 = query[dims[1]]  
-                upper1 = query[dims[0]+num_dims]
-                upper2 = query[dims[1]+num_dims]    
-
-                rect = Rectangle((lower1,lower2),upper1-lower1,upper2-lower2,fill=False,edgecolor='g',linewidth=1)
-                ax.text(upper1, upper2, case, color='b',fontsize=7)
-                case += 1
-                ax.add_patch(rect)
-                
-        if dataset is not None:
-            plt.scatter(dataset[:,dims[0]], dataset[:,dims[0]],color='blue')
-
-        ax.set_xlabel('dim 1', fontsize=15)
-        ax.set_ylabel('dim 2', fontsize=15)
-        #plt.xticks(np.arange(0, 400001, 100000), fontsize=10)
-        #plt.yticks(np.arange(0, 20001, 5000), fontsize=10)
-
-        plt.tight_layout() # preventing clipping the labels when save to pdf
-
-        if path is not None:
-            fig.savefig(path)
-
-        plt.show()
-    
     def real_result_size(self, dataset, queries):
         num_dims = int(len(self.used_dimensions))
         results = []
@@ -389,6 +314,33 @@ class DatasetAndQuerysetHelper:
                 domains[i][0] = row_numpy[i]
         if prob <= self.prob_threshold:    
             sampled_subset.append(row_numpy[0:self.domain_dims].tolist())
+    
+    def convert_date_to_int(self, date_str):
+        # 将日期字符串解析为datetime对象
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+        # 将datetime对象转换为整数形式
+        int_date = int(date_obj.strftime('%Y%m%d'))
+        return int_date
+
+
+    def __process_chunk_sampling_q4(self, row, domains, sampled_subset):
+        # row:lineitem[0-15] orders[0-8]
+        # 取lineitem[0, 4, 6, 11, 12] 和order[0, 3, 4]
+        cols_idx = [0, 4, 6, 11, 12, 16, 19, 20]
+        prob = random.uniform(0, 1) # 采样概率
+        row_numpy = row.to_numpy()  
+        row_numpy = row_numpy[cols_idx]
+        row_numpy[3] = self.convert_date_to_int(row_numpy[3])
+        row_numpy[4] = self.convert_date_to_int(row_numpy[4])
+        row_numpy[7] = self.convert_date_to_int(row_numpy[7])
+
+        for i in range(len(domains)):
+            if row_numpy[i] > domains[i][1]:
+                domains[i][1] = row_numpy[i]
+            if row_numpy[i] < domains[i][0]:
+                domains[i][0] = row_numpy[i]
+        if prob <= self.prob_threshold:    
+            sampled_subset.append(row_numpy.tolist())
     
     def __generate_new_testing_set(self, training_set, domains, maximum_X = 1):
         '''
