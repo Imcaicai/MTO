@@ -1,6 +1,3 @@
-
-
-from datetime import datetime
 import random
 import time
 
@@ -19,8 +16,9 @@ class DatasetAndQuerysetHelper:
                 prob_id = 1, vary_id = 0, vary_val = 0, train_percent = 0.5, random_percent = 0):
         
         self.used_dimensions = used_dimensions # i.e., [1,2,3,4]
-        self.total_dims = 16 # the dimensions of lineitem table
-        self.domain_dims = 8 # the dimensions we used for split and maintain min max for
+        self.type = type
+        self.total_dims = 16
+        self.domain_dims = 12
         
         self.scale_factor = scale_factor
         self.prob_threshold = 1 / self.scale_factor # the probability of an original record being sampled into this dataset
@@ -117,45 +115,6 @@ class DatasetAndQuerysetHelper:
         
         sampled_subset = np.array(sampled_subset)
         domains = np.array(domains)
-        np.savetxt(data_path, sampled_subset, delimiter=',')
-        np.savetxt(domain_path, domains, delimiter=',')
-
-
-    def generate_dataset_and_save_q4(self, lineitem_path, orders_path, data_path, domain_path, chunk_size=100000):
-        '''
-        Generate and save the dataset by joining lineitem.tbl and order.tbl on i_orderkey = o_orderkey.
-        '''
-        sampled_subset = []
-        domains = [[float('inf'), float('-inf')] for _ in range(self.domain_dims)] # indicate min, max
-
-        # Define column names and indices
-        lineitem_cols = [i for i in range(self.total_dims)]
-        lineitem_col_names = ['_i'+str(i) for i in range(self.total_dims)]
-        orders_cols = [i for i in range(9)]
-        orders_col_names = ['_o'+str(i) for i in range(9)]
-
-        start_time = time.time()
-        
-        # Read lineitem.tbl and orders.tbl in chunks and process
-        batch_count = 0
-        for lineitem_chunk in pd.read_table(lineitem_path, delimiter='|', usecols=lineitem_cols, names=lineitem_col_names, chunksize=chunk_size):
-            print('current chunk: ', batch_count)
-            for orders_chunk in pd.read_table(orders_path, delimiter='|', usecols=orders_cols, names=orders_col_names, chunksize=chunk_size):
-                # Perform inner join on i_orderkey = o_orderkey
-                merged_chunk = pd.merge(lineitem_chunk, orders_chunk, left_on='_i0', right_on='_o0', how='inner')
-                # Process merged chunk and update domains
-                merged_chunk.apply(lambda row: self.__process_chunk_sampling_q4(row, domains, sampled_subset), axis=1)
-
-                batch_count += 1
-
-        end_time = time.time()
-        print('total processing time: ', end_time - start_time)
-
-        # Convert lists to numpy arrays
-        sampled_subset = np.array(sampled_subset)
-        domains = np.array(domains)
-
-        # Save sampled subset and domains to CSV files
         np.savetxt(data_path, sampled_subset, delimiter=',')
         np.savetxt(domain_path, domains, delimiter=',')
 
@@ -302,37 +261,12 @@ class DatasetAndQuerysetHelper:
         
         return max_dist
     
-    # = = = = = internal functions = = = = =
-    
+
     def __process_chunk_sampling(self, row, domains, sampled_subset):
-        prob = random.uniform(0, 1)
-        row_numpy = row.to_numpy()  # 采样概率
-        for i in range(len(domains)):
-            if row_numpy[i] > domains[i][1]:
-                domains[i][1] = row_numpy[i]
-            if row_numpy[i] < domains[i][0]:
-                domains[i][0] = row_numpy[i]
-        if prob <= self.prob_threshold:    
-            sampled_subset.append(row_numpy[0:self.domain_dims].tolist())
-    
-    def convert_date_to_int(self, date_str):
-        # 将日期字符串解析为datetime对象
-        date_obj = datetime.strptime(date_str, '%Y-%m-%d')
-        # 将datetime对象转换为整数形式
-        int_date = int(date_obj.strftime('%Y%m%d'))
-        return int_date
-
-
-    def __process_chunk_sampling_q4(self, row, domains, sampled_subset):
-        # row:lineitem[0-15] orders[0-8]
-        # 取lineitem[0, 4, 6, 11, 12] 和order[0, 3, 4]
-        cols_idx = [0, 4, 6, 11, 12, 16, 19, 20]
         prob = random.uniform(0, 1) # 采样概率
         row_numpy = row.to_numpy()  
-        row_numpy = row_numpy[cols_idx]
-        row_numpy[3] = self.convert_date_to_int(row_numpy[3])
-        row_numpy[4] = self.convert_date_to_int(row_numpy[4])
-        row_numpy[7] = self.convert_date_to_int(row_numpy[7])
+        col_idx = [0,1,2,3,4,5,6,7,9,11,13,15]
+        row_numpy = row_numpy[col_idx]
 
         for i in range(len(domains)):
             if row_numpy[i] > domains[i][1]:
@@ -341,7 +275,8 @@ class DatasetAndQuerysetHelper:
                 domains[i][0] = row_numpy[i]
         if prob <= self.prob_threshold:    
             sampled_subset.append(row_numpy.tolist())
-    
+
+
     def __generate_new_testing_set(self, training_set, domains, maximum_X = 1):
         '''
         generate the testing set for 1-1 or 1-X train test scenarios (i.e., new NORA) which satisfy distance threshold

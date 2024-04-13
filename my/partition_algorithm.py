@@ -1,7 +1,6 @@
 
 import time
 import numpy as np
-from rtree import index # this package is only used for constructing Rtree filter
 from partition_tree import PartitionTree
 
 

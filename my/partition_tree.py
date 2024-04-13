@@ -92,39 +92,37 @@ class PartitionTree:
                 costs.append(cost)
             return costs
         
+
+        def evaluate_worst_query_cost(self, queries, data_threshold = 10000):
+            total_node_size = 0
+            num_nodes = 0
+
+            for node in self.nid_node_dict.items():
+                if node is not None:
+                    total_node_size += node.node_size
+                    num_nodes += node.node_size // data_threshold
+            return total_node_size // len(queries), total_node_size, num_nodes // len(queries), num_nodes
+
+        
         # 评估一组查询的逻辑I/O，返回平均查询成本
-        def evaluate_query_cost(self, queries, print_result = False, using_rtree_filter = False, redundant_partitions = None):
+        def evaluate_query_cost(self, queries, using_rtree_filter = False, redundant_partitions = None, data_threshold = 10000):
             '''
             get the logical IOs of the queris
             return the average query cost
             '''
             total_cost = 0
-            case = 0    # 表示每个查询
-            total_overlap_ids = {}
-            case_cost = {}
             total_overlap_cost = 0
 
             for query in queries:
                 cost = 0
                 overlapped_leaf_ids = self.query_single(query, using_rtree_filter, False, redundant_partitions)
-                total_overlap_ids[case] = overlapped_leaf_ids
                 for nid in overlapped_leaf_ids:
                     if nid >= 0:
                         cost += self.nid_node_dict[nid].node_size
-                        total_overlap_cost += 1
+                        total_overlap_cost += self.nid_node_dict[nid].node_size // data_threshold
                     else:
                         cost += (-nid) # redundant partition cost?
                 total_cost += cost
-                case_cost[case] = cost
-                case += 1
-            
-            # if print_result:
-            #     with open(cost_path, 'w') as file:
-            #         file.write("Total logical IOs: {}\n".format(total_cost))
-            #         file.write("Average logical IOs: {}\n".format(total_cost // len(queries)))
-            #         for case, ids in total_overlap_ids.items():
-            #             file.write("query {}: {} cost: {}\n".format(case, ids, case_cost[case]))
-
             return total_cost // len(queries), total_cost, total_overlap_cost // len(queries), total_overlap_cost
         
 
