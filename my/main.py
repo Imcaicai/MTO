@@ -74,9 +74,14 @@ def execute_qdtree(training_set, testing_set, dataset, boundary, block_size, tre
     else:
         average_cost, total_cost, average_overlap_cost, total_overlap_cost = pa_qd.partition_tree.evaluate_worst_query_cost(queries = testing_set, data_threshold = block_size)
     end_time = time.time()
+    
+    if type == 0:
+        query_time = end_time - start_time
+    else:
+        query_time = (end_time - start_time) * len(testing_set)
     with open(cost_path, 'w') as file:
         file.write("Method build time: {}\n".format(build_time))
-        file.write("Query time: {}\n".format(end_time - start_time))
+        file.write("Query time: {}\n".format(query_time))
         file.write("Average logical IOs: {}\n".format(average_cost))
         file.write("Total logical IOs: {}\n".format(total_cost))
         file.write("Average blocks accessed: {}\n".format(average_overlap_cost))
@@ -190,13 +195,13 @@ def tpch_q5(scale):
     test_path = './experiments/tpch/' + str(scale) +'/Q5/test.csv'
     tree_path = './experiments/tpch/' + str(scale) +'/Q5/mto'
     cost_path = './experiments/tpch/' + str(scale) +'/Q5/cost_mto.txt'
-    helper = DatasetAndQuerysetHelper(base_path = './experiments', used_dimensions = used_dims, scale_factor = scale) # set the base path
-    dataset, domains = helper.load_dataset(used_dims, data_path, domain_path)
-    boundary = [interval[0] for interval in domains]+[interval[1] for interval in domains]
-    training_set, testing_set = helper.generate_queryset_and_save(domain_path, 100, queryset_type=2)
-    np.savetxt(train_path, training_set, delimiter=',')
-    np.savetxt(test_path, testing_set, delimiter=',')
-    execute_qdtree(training_set, testing_set, dataset, boundary, block_size, tree_path, cost_path)
+    # helper = DatasetAndQuerysetHelper(base_path = './experiments', used_dimensions = used_dims, scale_factor = scale) # set the base path
+    # dataset, domains = helper.load_dataset(used_dims, data_path, domain_path)
+    # boundary = [interval[0] for interval in domains]+[interval[1] for interval in domains]
+    # training_set, testing_set = helper.generate_queryset_and_save(domain_path, 100, queryset_type=2)
+    # np.savetxt(train_path, training_set, delimiter=',')
+    # np.savetxt(test_path, testing_set, delimiter=',')
+    # execute_qdtree(training_set, testing_set, dataset, boundary, block_size, tree_path, cost_path)
 
 
     # qd-tree
@@ -208,6 +213,88 @@ def tpch_q5(scale):
     boundary = [interval[0] for interval in domains]+[interval[1] for interval in domains]
     training_set, testing_set = helper.generate_queryset_and_save(domain_path, 100, queryset_type=2)
     execute_qdtree(training_set, testing_set, dataset, boundary, block_size, tree_path, cost_path, 1)
+
+
+
+def tpch_q9(scale):
+    '''
+    table: lineitem, orders, part
+    column: l_discount, o_orderdate, p_retailprice
+    '''
+
+    # mto
+    used_dims = [4,8,11]
+    block_size = 10000
+    data_path = './experiments/tpch/' + str(scale) +'/dataset.csv'
+    domain_path = './experiments/tpch/' + str(scale) +'/domain.csv'
+    train_path = './experiments/tpch/' + str(scale) +'/Q9/train.csv'
+    test_path = './experiments/tpch/' + str(scale) +'/Q9/test.csv'
+    tree_path = './experiments/tpch/' + str(scale) +'/Q9/mto'
+    cost_path = './experiments/tpch/' + str(scale) +'/Q9/cost_mto.txt'
+    helper = DatasetAndQuerysetHelper(base_path = './experiments', used_dimensions = used_dims, scale_factor = scale) # set the base path
+    dataset, domains = helper.load_dataset(used_dims, data_path, domain_path)
+    boundary = [interval[0] for interval in domains]+[interval[1] for interval in domains]
+    training_set, testing_set = helper.generate_queryset_and_save(domain_path, 100, queryset_type=2)
+    np.savetxt(train_path, training_set, delimiter=',')
+    np.savetxt(test_path, testing_set, delimiter=',')
+    # training_set = genfromtxt(train_path, delimiter=',')
+    # testing_set = genfromtxt(test_path, delimiter=',')
+    execute_qdtree(training_set, testing_set, dataset, boundary, block_size, tree_path, cost_path)
+
+
+    # qd-tree
+    used_dims = [4]
+    tree_path = './experiments/tpch/' + str(scale) +'/Q9/qdtree'
+    cost_path = './experiments/tpch/' + str(scale) +'/Q9/cost_qdtree.txt'    
+    helper = DatasetAndQuerysetHelper(base_path = './experiments', used_dimensions = used_dims, scale_factor = scale) # set the base path
+    dataset, domains = helper.load_dataset(used_dims, data_path, domain_path)
+    boundary = [interval[0] for interval in domains]+[interval[1] for interval in domains]
+    training_set = genfromtxt(train_path, delimiter=',')
+    testing_set = genfromtxt(test_path, delimiter=',')
+    training_set = training_set[:, [0,3]]
+    testing_set = testing_set[:, [0,3]]
+    execute_qdtree(training_set, testing_set, dataset, boundary, block_size, tree_path, cost_path)
+
+
+
+def tpch_q14(scale):
+    '''
+    table: lineitem,part
+    column: l_shipdate, p_retailprice
+    '''
+
+    # mto
+    used_dims = [5,11]
+    block_size = 10000
+    data_path = './experiments/tpch/' + str(scale) +'/dataset.csv'
+    domain_path = './experiments/tpch/' + str(scale) +'/domain.csv'
+    train_path = './experiments/tpch/' + str(scale) +'/Q14/train.csv'
+    test_path = './experiments/tpch/' + str(scale) +'/Q14/test.csv'
+    tree_path = './experiments/tpch/' + str(scale) +'/Q14/mto'
+    cost_path = './experiments/tpch/' + str(scale) +'/Q14/cost_mto.txt'
+    helper = DatasetAndQuerysetHelper(base_path = './experiments', used_dimensions = used_dims, scale_factor = scale) # set the base path
+    dataset, domains = helper.load_dataset(used_dims, data_path, domain_path)
+    boundary = [interval[0] for interval in domains]+[interval[1] for interval in domains]
+    training_set, testing_set = helper.generate_queryset_and_save(domain_path, 100, queryset_type=2)
+    np.savetxt(train_path, training_set, delimiter=',')
+    np.savetxt(test_path, testing_set, delimiter=',')
+    # training_set = genfromtxt(train_path, delimiter=',')
+    # testing_set = genfromtxt(test_path, delimiter=',')
+    execute_qdtree(training_set, testing_set, dataset, boundary, block_size, tree_path, cost_path)
+
+
+    # qd-tree
+    used_dims = [5]
+    tree_path = './experiments/tpch/' + str(scale) +'/Q14/qdtree'
+    cost_path = './experiments/tpch/' + str(scale) +'/Q14/cost_qdtree.txt'    
+    helper = DatasetAndQuerysetHelper(base_path = './experiments', used_dimensions = used_dims, scale_factor = scale) # set the base path
+    dataset, domains = helper.load_dataset(used_dims, data_path, domain_path)
+    boundary = [interval[0] for interval in domains]+[interval[1] for interval in domains]
+    training_set = genfromtxt(train_path, delimiter=',')
+    testing_set = genfromtxt(test_path, delimiter=',')
+    training_set = training_set[:, [0,2]]
+    testing_set = testing_set[:, [0,2]]
+    execute_qdtree(training_set, testing_set, dataset, boundary, block_size, tree_path, cost_path)
 
 
 
@@ -248,6 +335,8 @@ if __name__ == "__main__":
     # tpch_q1(1)
     # tpch_q6(1)
     # tpch_q4(1)
-    tpch_q5(1)
+    # tpch_q5(1)
+    tpch_q9(1)
+    tpch_q14(1)
     # print("=================q4====================")
 

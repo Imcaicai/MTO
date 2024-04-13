@@ -1,6 +1,7 @@
 
 
 import copy
+from datetime import time
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.patches import Rectangle
@@ -94,14 +95,13 @@ class PartitionTree:
         
 
         def evaluate_worst_query_cost(self, queries, data_threshold = 10000):
-            total_node_size = 0
+            node_size = 0
             num_nodes = 0
-
-            for node in self.nid_node_dict.items():
-                if node is not None:
-                    total_node_size += node.node_size
+            for nid, node in self.nid_node_dict.items():
+                if node is not None and node.is_leaf:
+                    node_size += node.node_size
                     num_nodes += node.node_size // data_threshold
-            return total_node_size // len(queries), total_node_size, num_nodes // len(queries), num_nodes
+            return node_size, node_size * len(queries), num_nodes, num_nodes * len(queries)
 
         
         # 评估一组查询的逻辑I/O，返回平均查询成本
