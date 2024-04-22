@@ -100,7 +100,7 @@ class PartitionTree:
             for nid, node in self.nid_node_dict.items():
                 if node is not None and node.is_leaf:
                     node_size += node.node_size
-                    num_nodes += node.node_size // data_threshold
+                    num_nodes += (node.node_size // data_threshold) + 1
             return node_size, node_size * len(queries), num_nodes, num_nodes * len(queries)
 
         
@@ -119,11 +119,11 @@ class PartitionTree:
                 for nid in overlapped_leaf_ids:
                     if nid >= 0:
                         cost += self.nid_node_dict[nid].node_size
-                        total_overlap_cost += self.nid_node_dict[nid].node_size // data_threshold
+                        total_overlap_cost += (self.nid_node_dict[nid].node_size // data_threshold) + 1
                     else:
                         cost += (-nid) # redundant partition cost?
                 total_cost += cost
-            return total_cost // len(queries), total_cost, total_overlap_cost // len(queries), total_overlap_cost
+            return total_cost / len(queries), total_cost, total_overlap_cost / len(queries), total_overlap_cost
         
 
         def get_pid_for_data_point(self, point):

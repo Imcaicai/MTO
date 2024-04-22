@@ -1,0 +1,7 @@
+Method build time: 7.637499094009399
+Node count: 659
+Query time: 0.13801240921020508
+Average logical IOs: 927573.3983050848
+Total logical IOs: 109453661
+Average blocks accessed: 109.72881355932203
+Total blocks accessed: 12948

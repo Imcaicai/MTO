@@ -42,10 +42,10 @@ class DatasetAndQuerysetHelper:
         # the following are default query generation settings
         self.random_percent = random_percent # usef for query generation
         self.cluster_center_amount = 10
-        self.maximum_range_percent = 0.1 # 10% of the corresponding domain
+        self.maximum_range_percent = 1 # 20% of the corresponding domain
         self.sigma_percent = 0.2 # control the differences in a cluster
         
-        self.QDistThreshold_percent = 0.01 # distance threshold, 1% of the corresponding domain
+        self.QDistThreshold_percent = 0.001 # distance threshold, 1% of the corresponding domain
         self.maximum_X = 5 # used for the 1-X train test case
         
     
@@ -151,17 +151,17 @@ class DatasetAndQuerysetHelper:
             distribution_query = self.__generate_distribution_query(num_distribution_query, dim_prob, domains, maximum_range)
             random_query = self.__generate_random_query(num_random_query, dim_prob, domains, maximum_range)
 
-            # refresh query related class attributes
-            self.vary_id = vary_id
-            self.vary_val = vary_val      
-            self.query_base_path = self.base_path + '/queryset/prob' + str(prob_id) + '/' + self.vary_items[vary_id] + '/'
-            self.query_file_name = str(vary_val) + '_' + str(self.used_dimensions)
-            self.query_distribution_path = self.query_base_path + self.query_file_name + '_distribution.csv'
-            self.query_random_path = self.query_base_path + self.query_file_name + '_random.csv'
+            # # refresh query related class attributes
+            # self.vary_id = vary_id
+            # self.vary_val = vary_val      
+            # self.query_base_path = self.base_path + '/queryset/prob' + str(prob_id) + '/' + self.vary_items[vary_id] + '/'
+            # self.query_file_name = str(vary_val) + '_' + str(self.used_dimensions)
+            # self.query_distribution_path = self.query_base_path + self.query_file_name + '_distribution.csv'
+            # self.query_random_path = self.query_base_path + self.query_file_name + '_random.csv'
 
-            # save
-            np.savetxt(self.query_distribution_path, distribution_query, delimiter=',')
-            np.savetxt(self.query_random_path, random_query, delimiter=',')
+            # # save
+            # np.savetxt(self.query_distribution_path, distribution_query, delimiter=',')
+            # np.savetxt(self.query_random_path, random_query, delimiter=',')
 
             # print(" = = = distribution query = = = ")
             # print(distribution_query)
@@ -177,7 +177,6 @@ class DatasetAndQuerysetHelper:
             
         elif queryset_type == 1:
             num_training_query = query_amount // 2
-            num_testing_query = num_training_query
             training_set = self.__generate_new_training_set(num_training_query, domains, maximum_range)
             testing_set = self.__generate_new_testing_set(training_set, domains, maximum_X = 1)
             # TODO save it
@@ -349,6 +348,40 @@ class DatasetAndQuerysetHelper:
             
         return generated_queries
     
+
+    def extend_queryset(self, queries, QDistThreshold_percent = None, domains = None):
+        '''
+        extend the provided queryset with the previous provided query distance threshold
+        '''
+        extended_queries = []
+        
+        if QDistThreshold_percent is None:
+            QDistThreshold_percent = self.QDistThreshold_percent
+                    
+        num_dims = len(domains)
+            
+        extended_values = [(domain[1]-domain[0]) * QDistThreshold_percent for domain in domains]
+        EV = np.array(extended_values)
+        BL = [domain[0] for domain in domains]
+        BU = [domain[1] for domain in domains]
+         
+        for query in queries:
+            
+            QL = np.array(query[0:num_dims])
+            QU = np.array(query[num_dims:])
+            
+            QL -= EV # extended_values do not need to be converted to numpy
+            QL = np.amax(np.array([QL.tolist(), BL]),axis=0).tolist()# bound it by the domain
+            
+            QU += EV
+            QU = np.amin(np.array([QU.tolist(), BU]),axis=0).tolist() # bound it by the domain
+            
+            extended_query = QL + QU
+            extended_queries.append(extended_query)
+               
+        return extended_queries
+
+
     def __convert_to_train_test(self, distribution_query, random_query):
         train_distribution = distribution_query[0:int(self.train_percent*len(distribution_query))]
         test_distribution = distribution_query[int(self.train_percent*len(distribution_query)):]

@@ -26,7 +26,7 @@ class PartitionAlgorithm:
         start_time = time.time()
         self.__QDT(data_threshold)
         end_time = time.time()
-        return end_time-start_time
+        return end_time-start_time, self.partition_tree.node_count
      
     def InitializeWithKDT(self, num_dims, boundary, dataset, data_threshold):
         '''
@@ -41,7 +41,7 @@ class PartitionAlgorithm:
         start_time = time.time()
         self.__KDT(0, data_threshold, self.partition_tree.pt_root)
         end_time = time.time()
-        #print("Build Time (s):", end_time-start_time)
+        return end_time-start_time, self.partition_tree.node_count
     
     def ContinuePartitionWithKDT(self, existing_partition_tree, data_threshold):
         '''

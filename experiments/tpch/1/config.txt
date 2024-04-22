@@ -1,0 +1,6 @@
+scale_factor: 1
+query count: 100
+query type: 2
+block_size: 10000
+self.maximum_range_percent: 1
+self.QDistThreshold_percent: 1
